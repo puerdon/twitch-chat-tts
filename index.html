@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title></title>
+	<script type="text/javascript" src="./tmi.min.js">
+		
+	</script>
+</head>
+<body>
+	<div id="container">
+		
+	</div>
+	<script>
+		const div = document.getElementById("container");
+
+
+		const client = new tmi.Client({
+			options: { debug: true },
+			identity: {
+
+			},
+			channels: [ 'han__bao' ]
+		});
+		client.connect().catch(console.error);
+		client.on('message', (channel, tags, message, self) => {
+			if(self) return;
+			console.log(message);
+			console.log(tags);
+			var msg = removeEmote(tags, message);
+			// show message on the screen
+			const node = document.createElement("p");
+			const textnode = document.createTextNode(`${tags['display-name']}: ${msg}`);
+			node.appendChild(textnode);
+			div.appendChild(node);
+
+			// Web Speech API
+			const synth = window.speechSynthesis;
+
+
+
+			let speaker = new SpeechSynthesisUtterance(username(tags['display-name']) + ' says');
+			synth.speak(speaker);
+
+			let utterance = new SpeechSynthesisUtterance(msg);
+			synth.speak(utterance);
+		});
+
+		function username(name) {
+			console.log(name);
+			switch (name) {
+				case 'Maskedsound':
+					return "Josiah's butler";
+				case 'KellayeGoh':
+					return "Han's sister";
+				case 'EdArrowz':
+					return "Han's number one fan";
+				case 'MifyMiff':
+					return "sussy game lover";
+				case 'WheelerKK':
+					return "KKJ";
+				case 'collyoxenfree':
+					return "Gritty";
+
+				default:
+					return name;
+			}
+
+		}
+
+		function removeEmote(tags, message) {
+			
+			if (!tags['emotes']) {
+				return message;
+			} else {
+				var m = message;
+				for (const key in tags['emotes']) {
+					var char_range = tags['emotes'][key][0];
+					console.log(char_range);
+					console.log(`message: ${message}`);
+					var start_pos = char_range.split('-')[0];
+					var end_pos = char_range.split('-')[1];
+					console.log(start_pos);
+					console.log(end_pos);
+					console.log(m[end_pos]);
+					console.log(m.substring(start_pos, end_pos+1));
+					var emote_str = m.substring(start_pos, end_pos+1);
+					console.log(emote_str);
+
+
+
+				}
+
+				return message;
+			}
+
+		}
+
+
+
+	</script>
+</body>
+</html>
