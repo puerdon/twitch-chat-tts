@@ -9,43 +9,56 @@
 	</script>
 </head>
 <body>
-	<div id="container">
+	<input type="text" id="handle" name="handle" value="han__bao">
+	<button id="ok">OK</button>	<div id="container">
 		
 	</div>
 	<script>
+		// blacklist: don't read these ids' messages
+		const blacklist = ["Streamlabs"];
+
+		// Web Speech API
+		const synth = window.speechSynthesis;
+		console.log(synth.getVoices());
+		
 		const div = document.getElementById("container");
+		
+		document.getElementById("ok").addEventListener("click", start_client);
+
+		function start_client() {
+			const channel = document.getElementById('handle').value;
+			const client = new tmi.Client({
+				options: { debug: true },
+				identity: {
+
+				},
+				channels: [ channel ]
+			});
+			client.connect().catch(console.error);
+			client.on('message', (channel, tags, message, self) => {
+				if(self || blacklist.includes(tags['display-name']) ) return;
+				console.log(message);
+				console.log(tags);
+				var msg_to_read = removeEmote(tags, message);
+				
+				// show message on the screen
+				const node = document.createElement("p");
+				const textnode = document.createTextNode(`${tags['display-name']}: ${message}`);
+				node.appendChild(textnode);
+				div.appendChild(node);
+
+				
+				let speaker = new SpeechSynthesisUtterance(username(tags['display-name']) + ' says');
+				synth.speak(speaker);
+
+				let utterance = new SpeechSynthesisUtterance(msg_to_read);
+				synth.speak(utterance);
+			});
+		}
 
 
-		const client = new tmi.Client({
-			options: { debug: true },
-			identity: {
 
-			},
-			channels: [ 'han__bao' ]
-		});
-		client.connect().catch(console.error);
-		client.on('message', (channel, tags, message, self) => {
-			if(self) return;
-			console.log(message);
-			console.log(tags);
-			var msg = removeEmote(tags, message);
-			// show message on the screen
-			const node = document.createElement("p");
-			const textnode = document.createTextNode(`${tags['display-name']}: ${msg}`);
-			node.appendChild(textnode);
-			div.appendChild(node);
-
-			// Web Speech API
-			const synth = window.speechSynthesis;
-
-
-
-			let speaker = new SpeechSynthesisUtterance(username(tags['display-name']) + ' says');
-			synth.speak(speaker);
-
-			let utterance = new SpeechSynthesisUtterance(msg);
-			synth.speak(utterance);
-		});
+		
 
 		function username(name) {
 			console.log(name);
@@ -75,24 +88,28 @@
 				return message;
 			} else {
 				var m = message;
+				var emotes = [];
 				for (const key in tags['emotes']) {
 					var char_range = tags['emotes'][key][0];
-					console.log(char_range);
-					console.log(`message: ${message}`);
-					var start_pos = char_range.split('-')[0];
-					var end_pos = char_range.split('-')[1];
-					console.log(start_pos);
-					console.log(end_pos);
-					console.log(m[end_pos]);
-					console.log(m.substring(start_pos, end_pos+1));
-					var emote_str = m.substring(start_pos, end_pos+1);
-					console.log(emote_str);
+					// console.log(char_range);
+					// console.log(`message: ${message}`);
+					var start_pos = parseInt(char_range.split('-')[0]);
+					var end_pos = parseInt(char_range.split('-')[1]);
+					// console.log('start_pos:', start_pos);
+					// console.log('end_pos:', end_pos);
+					// console.log('m', m);
+					// console.log(m[end_pos]);
 
-
-
+					var emote_str = m.substring(start_pos, end_pos + 1);
+					console.log("emote_str: ", emote_str);
+					emotes.push(emote_str);
 				}
 
-				return message;
+				emotes.forEach(e => {
+					m = m.replaceAll(e, "");	
+				})
+
+				return m;
 			}
 
 		}
