@@ -17,6 +17,18 @@
 		// blacklist: don't read these ids' messages
 		const blacklist = ["Streamlabs"];
 
+		let hasEnabledVoice = false;
+
+		document.addEventListener("click", () => {
+			if (hasEnabledVoice) {
+				return;
+			}
+			const l = new SpeechSynthesisUtterance('hello');
+			l.volume = 0.5;
+			synth.speak(l);
+			hasEnabledVoice = true;
+		})
+
 		// Web Speech API
 		const synth = window.speechSynthesis;
 		console.log(synth.getVoices());
