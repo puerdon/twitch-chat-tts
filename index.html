@@ -4,11 +4,40 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<title></title>
+	<style type="text/css">
+		body {
+			background-color: #191919;
+			color: white;
+		}
+	</style>
 	<script type="text/javascript" src="./tmi.min.js">
 		
 	</script>
 </head>
 <body>
+	 <form>
+      <label for="txt">Enter text</label>
+      <input id="txt" type="text" class="txt" />
+      <!-- <div>
+        <label for="rate">Rate</label
+        ><input type="range" min="0.5" max="2" value="1" step="0.1" id="rate" />
+        <div class="rate-value">1</div>
+        <div class="clearfix"></div>
+      </div>
+      <div>
+        <label for="pitch">Pitch</label
+        ><input type="range" min="0" max="2" value="1" step="0.1" id="pitch" />
+        <div class="pitch-value">1</div>
+        <div class="clearfix"></div>
+      </div> -->
+      <h1>Available voices: </h1>
+      <select></select>
+      <div class="controls">
+        <button id="play" type="submit">Play</button>
+      </div>
+    </form>
+
+    <h1>Enter the channel name you want to listen to:</h1>
 	<input type="text" id="handle" name="handle" value="han__bao">
 	<button id="ok">OK</button>	<div id="container">
 		
@@ -19,16 +48,16 @@
 
 		let hasEnabledVoice = false;
 
-		document.addEventListener("click", () => {
-			console.log('clicked!');
-			if (hasEnabledVoice) {
-				return;
-			}
-			const l = new SpeechSynthesisUtterance('hello');
-			l.volume = 0.5;
-			synth.speak(l);
-			hasEnabledVoice = true;
-		})
+		// document.addEventListener("click", () => {
+		// 	console.log('clicked!');
+		// 	if (hasEnabledVoice) {
+		// 		return;
+		// 	}
+		// 	const l = new SpeechSynthesisUtterance('hello');
+		// 	l.volume = 0.5;
+		// 	synth.speak(l);
+		// 	hasEnabledVoice = true;
+		// })
 
 		// Web Speech API
 		const synth = window.speechSynthesis;
@@ -39,6 +68,16 @@
 		document.getElementById("ok").addEventListener("click", start_client);
 
 		function start_client() {
+			console.log('clicked!');
+			if (hasEnabledVoice) {
+				return;
+			}
+			const l = new SpeechSynthesisUtterance('hello');
+			l.volume = 0.5;
+			synth.speak(l);
+			hasEnabledVoice = true;
+
+
 			const channel = document.getElementById('handle').value;
 			const client = new tmi.Client({
 				options: { debug: true },
@@ -128,6 +167,109 @@
 		}
 
 
+
+		// 
+		const inputForm = document.querySelector("form");
+		const inputTxt = document.querySelector(".txt");
+		const voiceSelect = document.querySelector("select");
+
+		// const pitch = document.querySelector("#pitch");
+		// const pitchValue = document.querySelector(".pitch-value");
+		// const rate = document.querySelector("#rate");
+		// const rateValue = document.querySelector(".rate-value");
+
+		let voices = [];
+
+		function populateVoiceList() {
+		  voices = synth.getVoices().sort(function (a, b) {
+		    const aname = a.name.toUpperCase();
+		    const bname = b.name.toUpperCase();
+
+		    if (aname < bname) {
+		      return -1;
+		    } else if (aname == bname) {
+		      return 0;
+		    } else {
+		      return +1;
+		    }
+		  });
+		  console.log(voiceSelect.selectedIndex);
+		  const selectedIndex =
+		    voiceSelect.selectedIndex < 0 ? 0 : voiceSelect.selectedIndex;
+		  voiceSelect.innerHTML = "";
+
+		  for (let i = 0; i < voices.length; i++) {
+		    const option = document.createElement("option");
+		    option.textContent = `${voices[i].name} (${voices[i].lang})`;
+
+		    if (voices[i].default) {
+		      option.textContent += " -- DEFAULT";
+		    }
+
+		    option.setAttribute("data-lang", voices[i].lang);
+		    option.setAttribute("data-name", voices[i].name);
+		    voiceSelect.appendChild(option);
+		  }
+		  voiceSelect.selectedIndex = selectedIndex;
+		}
+
+		populateVoiceList();
+
+		if (speechSynthesis.onvoiceschanged !== undefined) {
+		  speechSynthesis.onvoiceschanged = populateVoiceList;
+		}
+
+		function speak() {
+		  if (synth.speaking) {
+		    console.error("speechSynthesis.speaking");
+		    return;
+		  }
+
+		  if (inputTxt.value !== "") {
+		    const utterThis = new SpeechSynthesisUtterance(inputTxt.value);
+
+		    utterThis.onend = function (event) {
+		      console.log("SpeechSynthesisUtterance.onend");
+		    };
+
+		    utterThis.onerror = function (event) {
+		      console.error("SpeechSynthesisUtterance.onerror");
+		    };
+
+		    const selectedOption =
+		      voiceSelect.selectedOptions[0].getAttribute("data-name");
+
+		    for (let i = 0; i < voices.length; i++) {
+		      if (voices[i].name === selectedOption) {
+		        utterThis.voice = voices[i];
+		        break;
+		      }
+		    }
+		    // utterThis.pitch = pitch.value;
+		    // utterThis.rate = rate.value;
+		    synth.speak(utterThis);
+		  }
+		}
+
+		inputForm.onsubmit = function (event) {
+		  event.preventDefault();
+
+		  speak();
+
+		  inputTxt.blur();
+		};
+
+		// pitch.onchange = function () {
+		//   pitchValue.textContent = pitch.value;
+		// };
+
+		// rate.onchange = function () {
+		//   rateValue.textContent = rate.value;
+		// };
+
+		voiceSelect.onchange = function () {
+		  speak();
+		};
 
 	</script>
 </body>
