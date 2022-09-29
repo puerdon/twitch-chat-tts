@@ -45,8 +45,15 @@
 	<script>
 		// blacklist: don't read these ids' messages
 		const blacklist = ["Streamlabs"];
-
+		let setIntervalID = -1;
 		let hasEnabledVoice = false;
+		let last_username = "";
+
+		const blank_utt = new SpeechSynthesisUtterance("");
+		blank_utt.volume = 0;
+		// blank_utt.onend = function (e) {
+		// 	console.log(`${e.elapsedTime} seconds. `)
+		// }
 
 		// document.addEventListener("click", () => {
 		// 	console.log('clicked!');
@@ -67,6 +74,13 @@
 		
 		document.getElementById("ok").addEventListener("click", start_client);
 
+		function beep() {
+			synth.speak(blank_utt);
+			console.log("beep");
+		}
+
+
+
 		function start_client() {
 			console.log('clicked!');
 			if (hasEnabledVoice) {
@@ -76,6 +90,8 @@
 			l.volume = 0.5;
 			synth.speak(l);
 			hasEnabledVoice = true;
+
+			setIntervalID = setInterval(beep, 500);
 
 
 			const channel = document.getElementById('handle').value;
@@ -101,14 +117,39 @@
 
 				
 				let speaker = new SpeechSynthesisUtterance(username(tags['display-name']) + ' says');
-				synth.speak(speaker);
+				speaker.onstart = function(e) {
+					console.log('start reading username');
+					// NoMsg = false;
+					clearInterval(setIntervalID);
+				}
+				// synth.speak(speaker);
+
+				console.log('asdf')
+				if (last_username != tags['display-name']) {
+					synth.speak(speaker);
+				} else {
+					synth.speak(blank_utt);
+				}
+
+				last_username = tags['display-name'];
+				
 
 				let utterance = new SpeechSynthesisUtterance(msg_to_read);
+				utterance.onend = function(e) {
+					console.log('ending reading message');
+					// NoMsg = true;
+					setIntervalID = setInterval(beep, 500);
+				}
 				synth.speak(utterance);
 			});
 		}
 
-
+		// while (1) {
+		// 	if (hasEnabledVoice && NoMsg) {
+		// 		console.log('toooo')
+		// 		synth.speak(blank_utt);
+		// 	}
+		// }
 
 		
 
