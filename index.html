@@ -51,10 +51,8 @@
 		let last_username = "";
 
 		const blank_utt = new SpeechSynthesisUtterance("beep");
-		blank_utt.volume = 0.2;
-		// blank_utt.onend = function (e) {
-		// 	console.log(`${e.elapsedTime} seconds. `)
-		// }
+		blank_utt.volume = 0;
+		blank_utt.onend = beep;
 
 		// document.addEventListener("click", () => {
 		// 	console.log('clicked!');
@@ -87,13 +85,13 @@
 			if (hasEnabledVoice) {
 				return;
 			}
-			const l = new SpeechSynthesisUtterance('hello');
+			const l = new SpeechSynthesisUtterance('Voice activated');
 			l.volume = 0.5;
 			synth.speak(l);
 			hasEnabledVoice = true;
 
 			// setIntervalID = setInterval(beep, 1200);
-
+			beep();
 
 			const channel = document.getElementById('handle').value;
 			const client = new tmi.Client({
