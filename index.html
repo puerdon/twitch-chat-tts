@@ -123,14 +123,14 @@
 					// NoMsg = false;
 					clearInterval(setIntervalID);
 				}
-				// synth.speak(speaker);
+				synth.speak(speaker);
 
-				console.log('asdf')
-				if (last_username != tags['display-name']) {
-					synth.speak(speaker);
-				} else {
-					synth.speak(blank_utt);
-				}
+				// console.log('asdf')
+				// if (last_username != tags['display-name']) {
+				// 	synth.speak(speaker);
+				// } else {
+				// 	synth.speak(blank_utt);
+				// }
 
 				last_username = tags['display-name'];
 				
