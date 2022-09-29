@@ -49,7 +49,7 @@
 		let hasEnabledVoice = false;
 		let last_username = "";
 
-		const blank_utt = new SpeechSynthesisUtterance("");
+		const blank_utt = new SpeechSynthesisUtterance("beep");
 		blank_utt.volume = 0;
 		// blank_utt.onend = function (e) {
 		// 	console.log(`${e.elapsedTime} seconds. `)
@@ -91,7 +91,7 @@
 			synth.speak(l);
 			hasEnabledVoice = true;
 
-			setIntervalID = setInterval(beep, 500);
+			setIntervalID = setInterval(beep, 1200);
 
 
 			const channel = document.getElementById('handle').value;
@@ -138,7 +138,7 @@
 				utterance.onend = function(e) {
 					console.log('ending reading message');
 					// NoMsg = true;
-					setIntervalID = setInterval(beep, 500);
+					setIntervalID = setInterval(beep, 1200);
 				}
 				synth.speak(utterance);
 			});
