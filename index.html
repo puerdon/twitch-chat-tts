@@ -92,7 +92,7 @@
 			synth.speak(l);
 			hasEnabledVoice = true;
 
-			setIntervalID = setInterval(beep, 1200);
+			// setIntervalID = setInterval(beep, 1200);
 
 
 			const channel = document.getElementById('handle').value;
@@ -118,29 +118,24 @@
 
 				
 				let speaker = new SpeechSynthesisUtterance(username(tags['display-name']) + ' says');
-				speaker.onstart = function(e) {
-					console.log('start reading username');
-					// NoMsg = false;
-					clearInterval(setIntervalID);
-				}
-				synth.speak(speaker);
-
-				// console.log('asdf')
-				// if (last_username != tags['display-name']) {
-				// 	synth.speak(speaker);
-				// } else {
-				// 	synth.speak(blank_utt);
+				// speaker.onstart = function(e) {
+				// 	console.log('start reading username');
 				// }
+
+				if (last_username != tags['display-name']) {
+					synth.speak(speaker);	
+				}
+	
 
 				last_username = tags['display-name'];
 				
 
 				let utterance = new SpeechSynthesisUtterance(msg_to_read);
-				utterance.onend = function(e) {
-					console.log('ending reading message');
-					// NoMsg = true;
-					setIntervalID = setInterval(beep, 1200);
-				}
+				// utterance.onend = function(e) {
+				// 	console.log('ending reading message');
+				// 	// NoMsg = true;
+				// 	// setIntervalID = setInterval(beep, 1200);
+				// }
 				synth.speak(utterance);
 			});
 		}
