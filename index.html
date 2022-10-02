@@ -9,16 +9,38 @@
 			background-color: #191919;
 			color: white;
 		}
+
+		#send-chat {
+  		position: fixed;
+  		bottom: 0;
+  		left: 0;
+		}
+		#send-chat input {
+			margin: 1em;
+			font-size: 1.5em;
+			display: inline-block;
+		}
+
+		#send-chat button {
+			/*margin: 1em;*/
+			font-size: 1.5em;
+			display: inline-block;
+		}
+
+		h1 {
+			font-size: 1em;
+		}
 	</style>
 	<script type="text/javascript" src="./tmi.min.js">
 		
 	</script>
 </head>
 <body>
+	<!--
 	 <form>
       <label for="txt">Enter text</label>
       <input id="txt" type="text" class="txt" />
-      <!-- <div>
+      <div>
         <label for="rate">Rate</label
         ><input type="range" min="0.5" max="2" value="1" step="0.1" id="rate" />
         <div class="rate-value">1</div>
@@ -29,7 +51,7 @@
         ><input type="range" min="0" max="2" value="1" step="0.1" id="pitch" />
         <div class="pitch-value">1</div>
         <div class="clearfix"></div>
-      </div> -->
+      </div>
       <span>v5</span>
       <h1>Available voices: </h1>
       <select></select>
@@ -37,13 +59,22 @@
         <button id="play" type="submit">Play</button>
       </div>
     </form>
-
-    <h1>Enter the channel name you want to listen to:</h1>
+	-->
+  <h1>Enter the channel name you want to listen to:</h1>
 	<input type="text" id="handle" name="handle" value="han__bao">
-	<button id="ok">OK</button>	<div id="container">
-		
+	<button id="ok">OK</button>	
+	<div id="container">	
 	</div>
+	<div id="send-chat">
+		<input type="text" name="chat" id="chat-msg-input">
+		<button id="send-chat-button" disabled onclick="send_chat()">Send</button>
+	</div>
+
 	<script>
+		let oauth = null;
+		let channel;
+		let client;
+		
 		// blacklist: don't read these ids' messages
 		const blacklist = ["Streamlabs"];
 		let setIntervalID = -1;
@@ -73,15 +104,27 @@
 		
 		document.getElementById("ok").addEventListener("click", start_client);
 
+		function check_oauth() {
+			// 確認網址有無 oauth query string
+			let params = (new URL(document.location)).searchParams;
+			let oauth_ = params.get("oauth");
+			
+			if (oauth_) {
+				// diable send chat button
+				document.querySelector('#send-chat-button').disabled = false;
+				oauth = oauth_;
+				console.log(oauth);
+			}
+		}
+
 		function beep() {
 			synth.speak(blank_utt);
 			console.log("beep");
 		}
 
-
-
 		function start_client() {
 			console.log('clicked!');
+			check_oauth();
 			if (hasEnabledVoice) {
 				return;
 			}
@@ -92,20 +135,19 @@
 
 			// setIntervalID = setInterval(beep, 1200);
 			beep();
-
-			const channel = document.getElementById('handle').value;
-			const client = new tmi.Client({
+			channel = document.getElementById('handle').value;
+			client = new tmi.Client({
 				options: { debug: true },
 				identity: {
-
+					password: oauth,
+					username: 'padahati',
 				},
 				channels: [ channel ]
 			});
 			client.connect().catch(console.error);
 			client.on('message', (channel, tags, message, self) => {
-				if(self || blacklist.includes(tags['display-name']) ) return;
-				console.log(message);
-				console.log(tags);
+				// console.log(message);
+				// console.log(tags);
 				var msg_to_read = removeEmote(tags, message);
 				
 				// show message on the screen
@@ -114,38 +156,24 @@
 				node.appendChild(textnode);
 				div.appendChild(node);
 
-				
-				let speaker = new SpeechSynthesisUtterance(username(tags['display-name']) + ' says');
-				// speaker.onstart = function(e) {
-				// 	console.log('start reading username');
-				// }
+				if(self || blacklist.includes(tags['display-name']) ) return;
 
+				let speaker = new SpeechSynthesisUtterance(username(tags['display-name']) + ' says');
 				if (last_username != tags['display-name']) {
 					synth.speak(speaker);	
 				}
-	
-
 				last_username = tags['display-name'];
-				
-
+			
 				let utterance = new SpeechSynthesisUtterance(msg_to_read);
-				// utterance.onend = function(e) {
-				// 	console.log('ending reading message');
-				// 	// NoMsg = true;
-				// 	// setIntervalID = setInterval(beep, 1200);
-				// }
 				synth.speak(utterance);
 			});
 		}
 
-		// while (1) {
-		// 	if (hasEnabledVoice && NoMsg) {
-		// 		console.log('toooo')
-		// 		synth.speak(blank_utt);
-		// 	}
-		// }
-
-		
+				function send_chat() {
+					let msg = document.getElementById("chat-msg-input").value;
+					client.say('han__bao', msg);
+					document.getElementById("chat-msg-input").value = "";
+				}
 
 		function username(name) {
 			console.log(name);
@@ -202,97 +230,95 @@
 		}
 
 
-
-		// 
-		const inputForm = document.querySelector("form");
-		const inputTxt = document.querySelector(".txt");
-		const voiceSelect = document.querySelector("select");
+		// const inputForm = document.querySelector("form");
+		// const inputTxt = document.querySelector(".txt");
+		// const voiceSelect = document.querySelector("select");
 
 		// const pitch = document.querySelector("#pitch");
 		// const pitchValue = document.querySelector(".pitch-value");
 		// const rate = document.querySelector("#rate");
 		// const rateValue = document.querySelector(".rate-value");
 
-		let voices = [];
+		// let voices = [];
 
-		function populateVoiceList() {
-		  voices = synth.getVoices().sort(function (a, b) {
-		    const aname = a.name.toUpperCase();
-		    const bname = b.name.toUpperCase();
+		// function populateVoiceList() {
+		//   voices = synth.getVoices().sort(function (a, b) {
+		//     const aname = a.name.toUpperCase();
+		//     const bname = b.name.toUpperCase();
 
-		    if (aname < bname) {
-		      return -1;
-		    } else if (aname == bname) {
-		      return 0;
-		    } else {
-		      return +1;
-		    }
-		  });
-		  console.log(voiceSelect.selectedIndex);
-		  const selectedIndex =
-		    voiceSelect.selectedIndex < 0 ? 0 : voiceSelect.selectedIndex;
-		  voiceSelect.innerHTML = "";
+		//     if (aname < bname) {
+		//       return -1;
+		//     } else if (aname == bname) {
+		//       return 0;
+		//     } else {
+		//       return +1;
+		//     }
+		//   });
+		//   console.log(voiceSelect.selectedIndex);
+		//   const selectedIndex =
+		//     voiceSelect.selectedIndex < 0 ? 0 : voiceSelect.selectedIndex;
+		//   voiceSelect.innerHTML = "";
 
-		  for (let i = 0; i < voices.length; i++) {
-		    const option = document.createElement("option");
-		    option.textContent = `${voices[i].name} (${voices[i].lang})`;
+		//   for (let i = 0; i < voices.length; i++) {
+		//     const option = document.createElement("option");
+		//     option.textContent = `${voices[i].name} (${voices[i].lang})`;
 
-		    if (voices[i].default) {
-		      option.textContent += " -- DEFAULT";
-		    }
+		//     if (voices[i].default) {
+		//       option.textContent += " -- DEFAULT";
+		//     }
 
-		    option.setAttribute("data-lang", voices[i].lang);
-		    option.setAttribute("data-name", voices[i].name);
-		    voiceSelect.appendChild(option);
-		  }
-		  voiceSelect.selectedIndex = selectedIndex;
-		}
+		//     option.setAttribute("data-lang", voices[i].lang);
+		//     option.setAttribute("data-name", voices[i].name);
+		//     voiceSelect.appendChild(option);
+		//   }
+		//   voiceSelect.selectedIndex = selectedIndex;
+		// }
 
-		populateVoiceList();
+		// populateVoiceList();
 
-		if (speechSynthesis.onvoiceschanged !== undefined) {
-		  speechSynthesis.onvoiceschanged = populateVoiceList;
-		}
+		// if (speechSynthesis.onvoiceschanged !== undefined) {
+		//   speechSynthesis.onvoiceschanged = populateVoiceList;
+		// }
 
-		function speak() {
-		  if (synth.speaking) {
-		    console.error("speechSynthesis.speaking");
-		    return;
-		  }
+		// function speak() {
+		//   if (synth.speaking) {
+		//     console.error("speechSynthesis.speaking");
+		//     return;
+		//   }
 
-		  if (inputTxt.value !== "") {
-		    const utterThis = new SpeechSynthesisUtterance(inputTxt.value);
+		//   if (inputTxt.value !== "") {
+		//     const utterThis = new SpeechSynthesisUtterance(inputTxt.value);
 
-		    utterThis.onend = function (event) {
-		      console.log("SpeechSynthesisUtterance.onend");
-		    };
+		//     utterThis.onend = function (event) {
+		//       console.log("SpeechSynthesisUtterance.onend");
+		//     };
 
-		    utterThis.onerror = function (event) {
-		      console.error("SpeechSynthesisUtterance.onerror");
-		    };
+		//     utterThis.onerror = function (event) {
+		//       console.error("SpeechSynthesisUtterance.onerror");
+		//     };
 
-		    const selectedOption =
-		      voiceSelect.selectedOptions[0].getAttribute("data-name");
+		//     const selectedOption =
+		//       voiceSelect.selectedOptions[0].getAttribute("data-name");
 
-		    for (let i = 0; i < voices.length; i++) {
-		      if (voices[i].name === selectedOption) {
-		        utterThis.voice = voices[i];
-		        break;
-		      }
-		    }
-		    // utterThis.pitch = pitch.value;
-		    // utterThis.rate = rate.value;
-		    synth.speak(utterThis);
-		  }
-		}
+		//     for (let i = 0; i < voices.length; i++) {
+		//       if (voices[i].name === selectedOption) {
+		//         utterThis.voice = voices[i];
+		//         break;
+		//       }
+		//     }
+		//     utterThis.pitch = pitch.value;
+		//     utterThis.rate = rate.value;
+		//     synth.speak(utterThis);
+		//   }
+		// }
 
-		inputForm.onsubmit = function (event) {
-		  event.preventDefault();
+		// inputForm.onsubmit = function (event) {
+		//   event.preventDefault();
 
-		  speak();
+		//   speak();
 
-		  inputTxt.blur();
-		};
+		//   inputTxt.blur();
+		// };
 
 		// pitch.onchange = function () {
 		//   pitchValue.textContent = pitch.value;
@@ -302,9 +328,9 @@
 		//   rateValue.textContent = rate.value;
 		// };
 
-		voiceSelect.onchange = function () {
-		  speak();
-		};
+		// voiceSelect.onchange = function () {
+		//   speak();
+		// };
 
 	</script>
 </body>
