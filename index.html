@@ -104,7 +104,16 @@
 		
 		document.getElementById("ok").addEventListener("click", start_client);
 
-		function check_oauth() {
+		function beep() {
+			synth.speak(blank_utt);
+			console.log("beep");
+		}
+
+		function start_client() {
+			console.log('clicked!');
+			
+			let identity = {};
+
 			// 確認網址有無 oauth query string
 			let params = (new URL(document.location)).searchParams;
 			let oauth_ = params.get("oauth");
@@ -114,17 +123,13 @@
 				document.querySelector('#send-chat-button').disabled = false;
 				oauth = oauth_;
 				console.log(oauth);
+				identity = {
+					password: oauth,
+					username: 'padahati',
+				}
 			}
-		}
 
-		function beep() {
-			synth.speak(blank_utt);
-			console.log("beep");
-		}
 
-		function start_client() {
-			console.log('clicked!');
-			check_oauth();
 			if (hasEnabledVoice) {
 				return;
 			}
@@ -133,15 +138,11 @@
 			synth.speak(l);
 			hasEnabledVoice = true;
 
-			// setIntervalID = setInterval(beep, 1200);
-			beep();
+			// beep();
 			channel = document.getElementById('handle').value;
 			client = new tmi.Client({
 				options: { debug: true },
-				identity: {
-					password: oauth,
-					username: 'padahati',
-				},
+				identity: identity,
 				channels: [ channel ]
 			});
 			client.connect().catch(console.error);
