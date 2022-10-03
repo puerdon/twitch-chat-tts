@@ -10,15 +10,32 @@
 			color: white;
 		}
 
+		input {
+			font-size: 1.5em;
+		}
+
+		#header {
+			height: 6vh;
+		}
+
+		#msg_container_div {
+			overflow-y: scroll;
+			height: 88vh;
+		}
+
+
 		#send-chat {
   		position: fixed;
+  		height:6vh;
   		bottom: 0;
   		left: 0;
+  		width: 100%;
 		}
 		#send-chat input {
-			margin: 1em;
+			margin: 10px;
 			font-size: 1.5em;
 			display: inline-block;
+			width: 70%;
 		}
 
 		#send-chat button {
@@ -60,10 +77,12 @@
       </div>
     </form>
 	-->
-  <h1>Enter the channel name you want to listen to:</h1>
-	<input type="text" id="handle" name="handle" value="han__bao">
-	<button id="ok">OK</button>	
-	<div id="container">	
+	<div id="header">
+		<h1>Enter the channel name you want to listen to:</h1>
+		<input type="text" id="handle" name="handle" value="han__bao">
+		<button id="ok">OK</button>	
+	</div>
+	<div id="msg-container">	
 	</div>
 	<div id="send-chat">
 		<input type="text" name="chat" id="chat-msg-input">
@@ -81,7 +100,7 @@
 		let hasEnabledVoice = false;
 		let last_username = "";
 
-		const blank_utt = new SpeechSynthesisUtterance("beep");
+		const blank_utt = new SpeechSynthesisUtterance("a");
 		blank_utt.volume = 0;
 		blank_utt.onend = beep;
 
@@ -100,13 +119,20 @@
 		const synth = window.speechSynthesis;
 		console.log(synth.getVoices());
 		
-		const div = document.getElementById("container");
+		const msg_container_div = document.getElementById("msg-container");
 		
 		document.getElementById("ok").addEventListener("click", start_client);
 
 		function beep() {
 			synth.speak(blank_utt);
 			console.log("beep");
+		}
+
+		function append_msg(msg){
+			const node = document.createElement("p");
+			const textnode = document.createTextNode(msg);
+			node.appendChild(textnode);
+			msg_container_div.appendChild(node);
 		}
 
 		function start_client() {
@@ -138,7 +164,7 @@
 			synth.speak(l);
 			hasEnabledVoice = true;
 
-			// beep();
+			beep();
 			channel = document.getElementById('handle').value;
 			client = new tmi.Client({
 				options: { debug: true },
@@ -152,10 +178,7 @@
 				var msg_to_read = removeEmote(tags, message);
 				
 				// show message on the screen
-				const node = document.createElement("p");
-				const textnode = document.createTextNode(`${tags['display-name']}: ${message}`);
-				node.appendChild(textnode);
-				div.appendChild(node);
+				append_msg(`${tags['display-name']}: ${message}`);
 
 				if(self || blacklist.includes(tags['display-name']) ) return;
 
