@@ -93,6 +93,7 @@
 		let oauth = null;
 		let channel;
 		let client;
+		let bgmode = false;
 		
 		// blacklist: don't read these ids' messages
 		const blacklist = ["Streamlabs"];
@@ -101,7 +102,7 @@
 		let last_username = "";
 
 		const blank_utt = new SpeechSynthesisUtterance("a");
-		blank_utt.volume = 0;
+		blank_utt.volume = 0.2;
 		blank_utt.onend = beep;
 
 		// document.addEventListener("click", () => {
@@ -125,7 +126,7 @@
 
 		function beep() {
 			synth.speak(blank_utt);
-			console.log("beep");
+			// console.log("beep");
 		}
 
 		function append_msg(msg){
@@ -143,6 +144,7 @@
 			// 確認網址有無 oauth query string
 			let params = (new URL(document.location)).searchParams;
 			let oauth_ = params.get("oauth");
+			let bgmode = params.get("bgmode") == 'true' ? true : false;
 			
 			if (oauth_) {
 				// diable send chat button
@@ -163,7 +165,9 @@
 			l.volume = 0.5;
 			synth.speak(l);
 			hasEnabledVoice = true;
-
+			if (bgmode) {
+				beep();
+			}
 			// beep();
 			channel = document.getElementById('handle').value;
 			client = new tmi.Client({
