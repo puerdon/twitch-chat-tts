@@ -3,96 +3,166 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title></title>
+	<title>Twitch Chat TTS</title>
 	<style type="text/css">
-		body {
-			background-color: #191919;
+
+		html, body {
+		    height: 100%;
+		    width: 100%;
+		    padding: 0;
+		    margin: 0;
+		}
+		
+		input {
+			border: none;
 			color: white;
 		}
 
-		input {
+		::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+		  color: white;
+		  opacity: 1; /* Firefox */
+		}
+
+		:-ms-input-placeholder { /* Internet Explorer 10-11 */
+		  color: white;
+		}
+
+		::-ms-input-placeholder { /* Microsoft Edge */
+		  color: white;
+		}
+
+		body {
+			background-color: #191919;
+			color: white;
+			display: flex;
+			flex-direction: column;
+/*			flex-wrap: wrap;*/
+			font-family: sans-serif;
+		}
+		p {
+			margin: 0;
+		}
+		h1 {
 			font-size: 1.5em;
 		}
+
+		body > div {
+			width: 100%;
+		}
+
+		.full-width {
+			flex-basis: 100%;
+		}
+
+		.flex {
+			display: flex;
+		}
+		.center {
+			align-items: center;
+		}
+
+		.blue {
+			background-color: #205072;
+		}
+
+		.light-blue {
+			background-color: #366180;
+		}
+
+		/* HEADER */
+
 
 		#header {
-			height: 6vh;
+			display: flex;
+			justify-content: space-between;
 		}
 
-		#msg_container_div {
-			overflow-y: scroll;
-			height: 88vh;
+		.header-left {
+			margin-left: 1em;
 		}
 
-
-		#send-chat {
-  		position: fixed;
-  		height:10vh;
-  		bottom: 0;
-  		left: 0;
-  		width: 100%;
+		.header-right {
+			margin-right: 2em;
+			gap: 10px;
+			font-size: 1.2em;
 		}
-		#send-chat input {
+
+		input#handle {
+			font-size: 1.2em;
+		}
+
+		/* MAIN */
+
+		#msg-container {
+			flex: auto;
+		}
+
+		/* FOOTER */
+
+		#send-chat-input {
+			flex: 10 1 0;
 			margin: 10px;
-			font-size: 1.5em;
-			display: inline-block;
-			width: 50%;
 		}
 
-		#send-chat button {
-			/*margin: 1em;*/
-			font-size: 1em;
-			display: inline-block;
+		#send-chat-input > input {
+			width: 100%;
+			font-size: 2em;
 		}
 
-		h1 {
-			font-size: 1em;
+		#send-chat-button {
+			flex: 1 1 0;
+			margin: 10px;
+
 		}
+
+		#send-chat-button > button {
+			font-size: 2em;
+		}
+
+		
 	</style>
 	<script type="text/javascript" src="./tmi.min.js">
 		
 	</script>
 </head>
 <body>
-	<!--
-	 <form>
-      <label for="txt">Enter text</label>
-      <input id="txt" type="text" class="txt" />
-      <div>
-        <label for="rate">Rate</label
-        ><input type="range" min="0.5" max="2" value="1" step="0.1" id="rate" />
-        <div class="rate-value">1</div>
-        <div class="clearfix"></div>
-      </div>
-      <div>
-        <label for="pitch">Pitch</label
-        ><input type="range" min="0" max="2" value="1" step="0.1" id="pitch" />
-        <div class="pitch-value">1</div>
-        <div class="clearfix"></div>
-      </div>
-      <span>v5</span>
-      <h1>Available voices: </h1>
-      <select></select>
-      <div class="controls">
-        <button id="play" type="submit">Play</button>
-      </div>
-    </form>
-	-->
-	<div id="header">
-		<h1>Enter the channel name you want to listen to:</h1>
-		<input type="text" id="handle" name="handle" value="han__bao">
-		<button id="ok">OK</button>	
+	<div id="header" class=" blue">
+		<div class="header-left">
+			<h1>Twitch Chat TTS</h1>
+		</div>
+
+		<div class="header-right center flex">
+			<input type="text" id="handle" name="handle" class="light-blue" placeholder="Enter channel name">
+
+			<input type="checkbox" id="mute_emote" name="mute_emote" value="mute_emote" checked>
+			<label for="mute_emote">Mute Emotes</label></input>
+
+			<input type="checkbox" id="mute_link" name="mute_link" value="mute_link" checked>
+			<label for="mute_link">Mute Links</label>
+
+			<button id="ok">OK</button>
+		</div>
+
 	</div>
-	<div id="msg-container">	
+	<div id="msg-container" class="light-blue">	
 	</div>
-	<div id="send-chat">
-		<input type="text" name="chat" id="chat-msg-input">
-		<button id="send-chat-button" disabled onclick="send_chat()">Send</button>
+	<div id="send-chat" class="flex center blue">
+		<div id="send-chat-input">
+			<input type="text" name="chat" id="chat-msg-input" class="light-blue">
+		</div>
+		<div id="send-chat-button">
+			<button id="send-chat-button" disabled onclick="send_chat()" class="center">Send</button>
+		</div>
 	</div>
 
 	<script>
+		const URL_REGEX = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g
+		const VOLUME = 1;
+
 		let oauth = null;
 		let channel;
 		let client;
+		let bgmode = false;
 		
 		// blacklist: don't read these ids' messages
 		const blacklist = ["Streamlabs"];
@@ -101,7 +171,7 @@
 		let last_username = "";
 
 		const blank_utt = new SpeechSynthesisUtterance("a");
-		blank_utt.volume = 0;
+		blank_utt.volume = 0.2;
 		blank_utt.onend = beep;
 
 		// document.addEventListener("click", () => {
@@ -125,7 +195,7 @@
 
 		function beep() {
 			synth.speak(blank_utt);
-			console.log("beep");
+			// console.log("beep");
 		}
 
 		function append_msg(msg){
@@ -142,13 +212,13 @@
 		}
 
 		function start_client() {
-			console.log('clicked!');
-			
+
 			let identity = {};
 
 			// 確認網址有無 oauth query string
 			let params = (new URL(document.location)).searchParams;
 			let oauth_ = params.get("oauth");
+			let bgmode = params.get("bgmode") == 'true' ? true : false;
 			
 			if (oauth_) {
 				// diable send chat button
@@ -161,16 +231,17 @@
 				}
 			}
 
-
 			if (hasEnabledVoice) {
 				return;
 			}
+
 			const l = new SpeechSynthesisUtterance('Voice activated');
-			l.volume = 0.5;
+			l.volume = VOLUME;
 			synth.speak(l);
 			hasEnabledVoice = true;
-
-			// beep();
+			if (bgmode) {
+				beep();
+			}
 			channel = document.getElementById('handle').value;
 			client = new tmi.Client({
 				options: { debug: true },
@@ -179,9 +250,20 @@
 			});
 			client.connect().catch(console.error);
 			client.on('message', (channel, tags, message, self) => {
-				// console.log(message);
-				// console.log(tags);
-				var msg_to_read = removeEmote(tags, message);
+
+				var msg_to_read = message;
+
+				if (document.getElementById('mute_emote').checked) {
+					msg_to_read = removeEmote(tags, msg_to_read);
+					console.log('222')
+					console.log('222')
+
+				}
+
+				if (document.getElementById('mute_link').checked) {
+					msg_to_read = removeLink(msg_to_read);
+				}
+				
 				
 				// show message on the screen
 				append_msg(`${tags['display-name']}: ${message}`);
@@ -206,24 +288,27 @@
 				}
 
 		function username(name) {
-			console.log(name);
-			switch (name) {
-				case 'Maskedsound':
-					return "Josiah's butler";
-				case 'KellayeGoh':
-					return "Han's sister";
-				case 'EdArrowz':
-					return "Han's number one fan";
-				case 'MifyMiff':
-					return "sussy game lover";
-				case 'WheelerKK':
-					return "KKJ";
-				case 'collyoxenfree':
-					return "Gritty";
 
-				default:
-					return name;
-			}
+			// console.log(name);
+			// switch (name) {
+			// 	case 'Maskedsound':
+			// 		return "Josiah's butler";
+			// 	case 'KellayeGoh':
+			// 		return "Han's sister";
+			// 	case 'EdArrowz':
+			// 		return "Han's number one fan";
+			// 	case 'MifyMiff':
+			// 		return "sussy game lover";
+			// 	case 'WheelerKK':
+			// 		return "KKJ";
+			// 	case 'collyoxenfree':
+			// 		return "Gritty";
+
+			// 	default:
+			// 		return name;
+			// }
+
+			return name;
 
 		}
 
@@ -259,108 +344,9 @@
 
 		}
 
-
-		// const inputForm = document.querySelector("form");
-		// const inputTxt = document.querySelector(".txt");
-		// const voiceSelect = document.querySelector("select");
-
-		// const pitch = document.querySelector("#pitch");
-		// const pitchValue = document.querySelector(".pitch-value");
-		// const rate = document.querySelector("#rate");
-		// const rateValue = document.querySelector(".rate-value");
-
-		// let voices = [];
-
-		// function populateVoiceList() {
-		//   voices = synth.getVoices().sort(function (a, b) {
-		//     const aname = a.name.toUpperCase();
-		//     const bname = b.name.toUpperCase();
-
-		//     if (aname < bname) {
-		//       return -1;
-		//     } else if (aname == bname) {
-		//       return 0;
-		//     } else {
-		//       return +1;
-		//     }
-		//   });
-		//   console.log(voiceSelect.selectedIndex);
-		//   const selectedIndex =
-		//     voiceSelect.selectedIndex < 0 ? 0 : voiceSelect.selectedIndex;
-		//   voiceSelect.innerHTML = "";
-
-		//   for (let i = 0; i < voices.length; i++) {
-		//     const option = document.createElement("option");
-		//     option.textContent = `${voices[i].name} (${voices[i].lang})`;
-
-		//     if (voices[i].default) {
-		//       option.textContent += " -- DEFAULT";
-		//     }
-
-		//     option.setAttribute("data-lang", voices[i].lang);
-		//     option.setAttribute("data-name", voices[i].name);
-		//     voiceSelect.appendChild(option);
-		//   }
-		//   voiceSelect.selectedIndex = selectedIndex;
-		// }
-
-		// populateVoiceList();
-
-		// if (speechSynthesis.onvoiceschanged !== undefined) {
-		//   speechSynthesis.onvoiceschanged = populateVoiceList;
-		// }
-
-		// function speak() {
-		//   if (synth.speaking) {
-		//     console.error("speechSynthesis.speaking");
-		//     return;
-		//   }
-
-		//   if (inputTxt.value !== "") {
-		//     const utterThis = new SpeechSynthesisUtterance(inputTxt.value);
-
-		//     utterThis.onend = function (event) {
-		//       console.log("SpeechSynthesisUtterance.onend");
-		//     };
-
-		//     utterThis.onerror = function (event) {
-		//       console.error("SpeechSynthesisUtterance.onerror");
-		//     };
-
-		//     const selectedOption =
-		//       voiceSelect.selectedOptions[0].getAttribute("data-name");
-
-		//     for (let i = 0; i < voices.length; i++) {
-		//       if (voices[i].name === selectedOption) {
-		//         utterThis.voice = voices[i];
-		//         break;
-		//       }
-		//     }
-		//     utterThis.pitch = pitch.value;
-		//     utterThis.rate = rate.value;
-		//     synth.speak(utterThis);
-		//   }
-		// }
-
-		// inputForm.onsubmit = function (event) {
-		//   event.preventDefault();
-
-		//   speak();
-
-		//   inputTxt.blur();
-		// };
-
-		// pitch.onchange = function () {
-		//   pitchValue.textContent = pitch.value;
-		// };
-
-		// rate.onchange = function () {
-		//   rateValue.textContent = rate.value;
-		// };
-
-		// voiceSelect.onchange = function () {
-		//   speak();
-		// };
+		function removeLink(message) {
+			return message.replace(URL_REGEX, "");
+		}
 
 	</script>
 </body>
