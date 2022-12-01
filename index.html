@@ -135,6 +135,12 @@
 			msg_container_div.appendChild(node);
 		}
 
+		funnction init() {
+			// check query string
+			let params = (new URL(document.location)).searchParams;
+			channel = params.get("channel");
+		}
+
 		function start_client() {
 			console.log('clicked!');
 			
