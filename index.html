@@ -134,11 +134,15 @@
 		<div class="header-right center flex">
 			<input type="text" id="handle" name="handle" class="light-blue" placeholder="Enter channel name">
 
+			<input type="checkbox" id="use_restream" name="use_restream" value="use_restream">
+			<label for="use_restream">Using RestreamBot</label>
+
 			<input type="checkbox" id="mute_emote" name="mute_emote" value="mute_emote" checked>
 			<label for="mute_emote">Mute Emotes</label></input>
 
 			<input type="checkbox" id="mute_link" name="mute_link" value="mute_link" checked>
 			<label for="mute_link">Mute Links</label>
+
 
 			<button id="ok">OK</button>
 		</div>
@@ -157,6 +161,7 @@
 
 	<script>
 		const URL_REGEX = /(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g
+		const RESTREAM_REGEX = /\[\w+:([\w\s]+)\]/
 		const VOLUME = 1;
 
 		let oauth = null;
@@ -205,11 +210,22 @@
 			msg_container_div.appendChild(node);
 		}
 
-		funnction init() {
-			// check query string
+		function onLoad() {
 			let params = (new URL(document.location)).searchParams;
-			channel = params.get("channel");
+			let channel = params.get("channel");
+			let use_restream = params.get("use_restream");
+			if (channel) {
+				document.getElementById("handle").value = channel;
+			}
+			console.log(use_restream);
+
+			if (use_restream) {
+				document.getElementById("use_restream").checked = true;
+			}
+
 		}
+
+		onLoad();
 
 		function start_client() {
 
@@ -230,6 +246,8 @@
 					username: 'padahati',
 				}
 			}
+
+			
 
 			if (hasEnabledVoice) {
 				return;
@@ -252,12 +270,10 @@
 			client.on('message', (channel, tags, message, self) => {
 
 				var msg_to_read = message;
+				var speaker = tags['display-name'];
 
 				if (document.getElementById('mute_emote').checked) {
 					msg_to_read = removeEmote(tags, msg_to_read);
-					console.log('222')
-					console.log('222')
-
 				}
 
 				if (document.getElementById('mute_link').checked) {
@@ -270,11 +286,19 @@
 
 				if(self || blacklist.includes(tags['display-name']) ) return;
 
-				let speaker = new SpeechSynthesisUtterance(username(tags['display-name']) + ' says');
-				if (last_username != tags['display-name']) {
-					synth.speak(speaker);	
+				if (document.getElementById('use_restream').checked) {
+					if (speaker.toLowerCase() === 'restreambot') {
+						speaker = getUserFromRestreamTag(message);
+					}
 				}
-				last_username = tags['display-name'];
+
+				let speaker_utt = new SpeechSynthesisUtterance(username(speaker) + ' says');
+				synth.speak(speaker_utt);	
+				
+				// if (last_username != tags['display-name']) {
+				// 	synth.speak(speaker);	
+				// }
+				// last_username = tags['display-name'];
 			
 				let utterance = new SpeechSynthesisUtterance(msg_to_read);
 				synth.speak(utterance);
@@ -348,6 +372,15 @@
 			return message.replace(URL_REGEX, "");
 		}
 
+
+		function getUserFromRestreamTag(message) {
+			if (RESTREAM_REGEX.test(message)) {
+				return message.match(RESTREAM_REGEX)[1];	
+			} else {
+				return message;
+			}
+			
+		}
 	</script>
 </body>
 </html>
